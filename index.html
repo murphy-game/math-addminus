@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>機甲充能站 v3.5 (里程碑版)</title>
+    <title>機甲充能站 v3.6 (直式運算版)</title>
     <style>
         :root {
             --primary: #00d2d3;
@@ -83,23 +83,50 @@
         }
 
         #hero-img {
-            max-height: 20vh; width: auto; object-fit: contain;
+            max-height: 16vh; width: auto; object-fit: contain;
             filter: drop-shadow(0 0 10px rgba(0,210,211,0.5));
             transition: transform 0.2s;
         }
         .hero-shoot { animation: shootRecoil 0.2s; filter: drop-shadow(0 0 20px #fff) !important; }
         @keyframes shootRecoil { 0% { transform: scale(1); } 50% { transform: scale(0.9); } 100% { transform: scale(1); } }
 
+        /* 橫式算式顯示 */
         .math-display {
-            font-size: 4rem; font-weight: 900; color: #fff;
+            font-size: 3.5rem; font-weight: 900; color: #fff;
             text-shadow: 0 5px 0 #222, 0 0 20px var(--primary);
             margin: 5px 0; letter-spacing: 2px;
             display: flex; align-items: center; gap: 15px;
         }
         .operator { color: #feca57; }
 
+        /* Lv3 直式算式顯示 */
+        .vertical-math-display {
+            display: grid;
+            grid-template-columns: auto auto;
+            justify-content: center;
+            align-items: center;
+            font-size: 3.2rem; font-weight: 900; color: #fff;
+            text-shadow: 0 4px 0 #222, 0 0 15px var(--primary);
+            background: rgba(0,0,0,0.4);
+            padding: 15px 30px;
+            border-radius: 15px;
+            border: 2px solid var(--primary);
+            margin: 10px 0;
+            line-height: 1.1;
+        }
+        .v-row-1 { grid-column: 2; text-align: right; letter-spacing: 6px; }
+        .v-row-2-op { grid-column: 1; text-align: center; color: #feca57; padding-right: 15px; }
+        .v-row-2-num { grid-column: 2; text-align: right; letter-spacing: 6px; }
+        .v-line { 
+            grid-column: 1 / span 2; 
+            border-bottom: 4px solid #fff; 
+            margin: 6px 0; 
+            box-shadow: 0 0 8px var(--primary);
+        }
+        .v-row-3 { grid-column: 2; text-align: right; color: #feca57; letter-spacing: 6px; }
+
         .visual-aid {
-            display: flex; gap: 20px; min-height: 60px;
+            display: flex; gap: 15px; min-height: 60px;
             justify-content: center; align-items: flex-start;
             margin-bottom: 10px; width: 100%;
         }
@@ -113,6 +140,7 @@
         .math-icon {
             width: 24px; height: 24px; background-color: #00d2d3;
             border-radius: 4px; box-shadow: 0 0 8px #00d2d3; background-size: cover;
+            position: relative;
         }
         .icon-img {
             background-image: url('energy.png'); background-color: transparent; 
@@ -120,25 +148,20 @@
         }
         .math-icon.sec { background-color: #ff9ff3; box-shadow: 0 0 8px #ff9ff3; }
         .icon-img.sec { filter: hue-rotate(90deg); background-color: transparent; box-shadow: none; }
+        
+        /* 減法被扣除的圖示樣式 */
+        .icon-removed { opacity: 0.35; filter: grayscale(0.8); }
+        .icon-removed::after {
+            content: "✖"; position: absolute; top: -2px; left: 3px;
+            color: #ff4757; font-size: 18px; font-weight: bold;
+        }
 
         @media (max-width: 400px) {
             .math-icon { width: 18px; height: 18px; }
             .icon-img { width: 20px; height: 20px; }
             .ten-frame-group { max-width: 110px; }
-            .math-display { font-size: 3rem; }
-        }
-
-        .count-on-hint {
-            font-size: 2rem; color: #fff; font-weight: bold;
-            border: 3px solid #00d2d3; border-radius: 12px;
-            background: rgba(0, 210, 211, 0.2);
-            padding: 0 20px; height: 60px; line-height: 54px;
-            animation: pulseText 1.5s infinite;
-        }
-        @keyframes pulseText {
-            0% { transform: scale(1); box-shadow: 0 0 0 rgba(0,210,211,0); }
-            50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(0,210,211,0.6); }
-            100% { transform: scale(1); box-shadow: 0 0 0 rgba(0,210,211,0); }
+            .math-display { font-size: 2.8rem; }
+            .vertical-math-display { font-size: 2.5rem; padding: 10px 20px; }
         }
 
         #boom-img {
@@ -163,7 +186,7 @@
             border: 4px solid #fff; border-bottom: 8px solid #ccc;
             border-radius: 20px;
             font-size: 2.2rem; font-weight: bold; color: #333;
-            padding: 20px; cursor: pointer;
+            padding: 15px; cursor: pointer;
             transition: all 0.1s;
             display: flex; justify-content: center; align-items: center;
         }
@@ -195,7 +218,6 @@
         .menu-btn.infinite-sub { border-color: var(--infinite-purple); }
         .menu-btn.infinite-sub:active { background: var(--infinite-purple); }
 
-        /* 里程碑畫面樣式 */
         #milestone-screen {
             background: rgba(0,0,0,0.85);
             z-index: 150;
@@ -207,7 +229,6 @@
             animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-
     </style>
 </head>
 <body>
@@ -232,15 +253,25 @@
         <div id="progress-text" class="progress-text">進度: 0 / 10</div>
 
         <div class="question-zone">
-            <img id="boom-img" src="boom.png">
-            <img id="hero-img" src="hero.png">
+            <img id="boom-img" src="boom.png" alt="boom">
+            <img id="hero-img" src="hero.png" alt="hero">
             
-            <div class="math-display">
+            <!-- 橫式題目區域 -->
+            <div id="horizontal-display" class="math-display">
                 <span id="num1">5</span>
                 <span class="operator" id="operator">+</span>
                 <span id="num2">3</span>
                 <span class="operator">=</span>
                 <span class="operator">?</span>
+            </div>
+
+            <!-- Lv3 專用直式題目區域 -->
+            <div id="vertical-display" class="vertical-math-display hidden">
+                <div class="v-row-1" id="v-num1">52</div>
+                <div class="v-row-2-op" id="v-operator">+</div>
+                <div class="v-row-2-num" id="v-num2">35</div>
+                <div class="v-line"></div>
+                <div class="v-row-3">?</div>
             </div>
 
             <div class="visual-aid" id="visual-aid"></div>
@@ -249,9 +280,10 @@
         <div class="options-grid" id="options-box"></div>
     </div>
 
+    <!-- 選單介面 -->
     <div id="mode-screen" class="overlay-screen">
         <h1 style="color: var(--primary);">機甲充能站</h1>
-        <p>媽媽自製：防成癮心算特訓</p>
+        <p>防成癮心算特訓</p>
         
         <button class="menu-btn" onclick="startGame(1)">
             🟢 Lv1 初級充能
@@ -262,8 +294,8 @@
             <span class="level-tag">目標 15 題 (20以內加減)</span>
         </button>
         <button class="menu-btn" onclick="startGame(3)">
-            🔴 Lv3 極速運轉
-            <span class="level-tag">目標 25 題 (100以內加減)</span>
+            🔴 Lv3 極速運轉 (直式特訓)
+            <span class="level-tag">目標 25 題 (100以內直式加減)</span>
         </button>
         
         <div style="display: flex; gap: 10px; width: 100%; max-width: 350px;">
@@ -286,7 +318,7 @@
 
     <div id="levelup-screen" class="overlay-screen hidden">
         <h1 style="color: #f1c40f;">🎉 充能完成！</h1>
-        <img src="hero.png" style="width: 150px; filter: drop-shadow(0 0 20px gold);">
+        <img src="hero.png" style="width: 150px; filter: drop-shadow(0 0 20px gold);" alt="hero">
         <p>機甲能量已充滿！</p>
         <button class="menu-btn" onclick="goToNextLevel()">🚀 前往下一關</button>
     </div>
@@ -301,14 +333,14 @@
 
     <div id="result-screen" class="overlay-screen hidden">
         <h1 style="color: #ff4757;">能量耗盡</h1>
-        <img src="lose.png" style="width: 120px; margin: 10px 0;">
+        <img src="lose.png" style="width: 120px; margin: 10px 0;" alt="lose">
         <p style="font-size: 1.5rem;">得分: <span id="final-score" style="color:var(--primary)">0</span></p>
         <button class="menu-btn" onclick="restartLevel()">🔄 再試一次</button>
     </div>
 
     <div id="milestone-screen" class="overlay-screen hidden">
         <h1 class="milestone-text">🎉 達成目標！</h1>
-        <img src="hero.png" style="width: 180px; filter: drop-shadow(0 0 30px var(--primary));">
+        <img src="hero.png" style="width: 180px; filter: drop-shadow(0 0 30px var(--primary));" alt="hero">
         <p style="font-size: 1.5rem; margin-top: 20px;">已完成 <span id="milestone-count" style="color: #feca57; font-size: 2rem;">10</span> 題</p>
         <p style="color: #aaa; font-size: 0.9rem;">(休息一下，馬上繼續...)</p>
     </div>
@@ -325,12 +357,11 @@
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx;
         let voiceEnabled = true;
+        let isProcessingAnswer = false; // 防連點開關
 
-        // 防縮放
         document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
         document.addEventListener('dblclick', function(e) { e.preventDefault(); }, { passive: false });
 
-        // 全域點擊喚醒音效
         function initAudio() {
             if (!audioCtx) audioCtx = new AudioContext();
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -338,7 +369,6 @@
         document.body.addEventListener('click', function() { initAudio(); }, { once: true });
         document.body.addEventListener('touchstart', function() { initAudio(); }, { once: true });
 
-        // 關卡目標
         const LEVEL_TARGETS = { 1: 10, 2: 15, 3: 25 };
 
         let totalTimePlayed = 0;
@@ -400,28 +430,31 @@
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'zh-TW'; utterance.rate = 1; utterance.pitch = 1.4;
                 window.speechSynthesis.speak(utterance);
-            }, 500);
+            }, 300);
         }
 
         function speakQuestion(n1, op, n2) {
             if(!voiceEnabled || !window.speechSynthesis) return;
             window.speechSynthesis.cancel();
             let opText = (op === '+') ? "加" : "減";
-            let text = (state.level === 2) ? `${n1} ...... ${opText} ${n2}` : `${n1} ${opText} ${n2}`;
+            let text = `${n1} ${opText} ${n2}`;
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'zh-TW'; utterance.rate = 0.8; utterance.pitch = 1.2;
+            utterance.lang = 'zh-TW'; utterance.rate = 0.85; utterance.pitch = 1.2;
             window.speechSynthesis.speak(utterance);
         }
 
         function toggleVoice() {
             voiceEnabled = !voiceEnabled;
             document.getElementById('voice-btn').innerText = voiceEnabled ? '🗣️' : '🔇';
+            if(!voiceEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
         }
 
         let state = { level: 1, score: 0, energy: 50, answer: 0, isPlaying: false, isPaused: false, levelProgress: 0, gameMode: 'normal', infiniteCount: 0 };
 
         const els = {
             num1: document.getElementById('num1'), num2: document.getElementById('num2'), op: document.getElementById('operator'),
+            vDisplay: document.getElementById('vertical-display'), hDisplay: document.getElementById('horizontal-display'),
+            vNum1: document.getElementById('v-num1'), vNum2: document.getElementById('v-num2'), vOp: document.getElementById('v-operator'),
             visual: document.getElementById('visual-aid'), options: document.getElementById('options-box'),
             energyBar: document.getElementById('energy-bar'), score: document.getElementById('score-display'),
             hero: document.getElementById('hero-img'), boom: document.getElementById('boom-img'),
@@ -436,7 +469,6 @@
         function startGame(lv) {
             initAudio();
             
-            // 模式判斷
             if (lv === 'infinite-add') {
                 state.gameMode = 'infinite-add';
                 state.level = 1; 
@@ -451,9 +483,10 @@
             state.score = 0;
             state.energy = 50; 
             state.levelProgress = 0;
-            state.infiniteCount = 0; // 無限模式計數器
+            state.infiniteCount = 0;
             state.isPlaying = true;
             state.isPaused = false;
+            isProcessingAnswer = false;
             
             Object.values(els.screens).forEach(el => el.classList.add('hidden'));
             
@@ -462,7 +495,7 @@
             
             if(state.timer) clearInterval(state.timer);
             
-            let dropRate = (state.gameMode.startsWith('infinite')) ? 0 : (lv === 1 ? 0 : (lv === 2 ? 0.3 : 0.8));
+            let dropRate = (state.gameMode.startsWith('infinite')) ? 0 : (lv === 1 ? 0 : (lv === 2 ? 0.2 : 0.6));
             
             if(dropRate > 0) {
                 state.timer = setInterval(() => {
@@ -500,11 +533,11 @@
 
         function nextQuestion() {
             if(!state.isPlaying || state.isPaused) return;
+            isProcessingAnswer = false;
 
             let n1, n2, op;
             
             if (state.gameMode === 'infinite-add') {
-                // 無限加法
                 op = '+';
                 if(Math.random() > 0.4) {
                     n1 = Math.floor(Math.random() * 9) + 2; n2 = Math.floor(Math.random() * 8) + 1;
@@ -512,7 +545,6 @@
                     n1 = Math.floor(Math.random() * 5) + 1; n2 = Math.floor(Math.random() * 5) + 1; 
                 }
             } else if (state.gameMode === 'infinite-sub') {
-                // 無限減法
                 op = '-';
                 if(Math.random() > 0.4) {
                     n1 = Math.floor(Math.random() * 12) + 3; n2 = Math.floor(Math.random() * (n1-2)) + 1;
@@ -520,22 +552,41 @@
                     n1 = Math.floor(Math.random() * 5) + 2; n2 = Math.floor(Math.random() * (n1-1)) + 1; 
                 }
             } else {
-                // 原有闖關邏輯
                 if(state.level === 1) {
                     op = '+'; n1 = Math.floor(Math.random() * 5) + 1; n2 = Math.floor(Math.random() * 5) + 1; 
                 } else if(state.level === 2) {
-                    op = Math.random() > 0.8 ? '-' : '+';
+                    op = Math.random() > 0.4 ? '-' : '+';
                     if(op === '+') { n1 = Math.floor(Math.random() * 9) + 3; n2 = Math.floor(Math.random() * 5) + 1; } 
                     else { n1 = Math.floor(Math.random() * 8) + 3; n2 = Math.floor(Math.random() * (n1-1)) + 1; }
                 } else {
+                    // Lv3: 100 以內直式算式 (可選帶不進位/進位)
                     op = Math.random() > 0.5 ? '-' : '+';
-                    if(op === '+') { n1 = Math.floor(Math.random() * 50) + 10; n2 = Math.floor(Math.random() * 40) + 5; } 
-                    else { n1 = Math.floor(Math.random() * 80) + 20; n2 = Math.floor(Math.random() * (n1 - 10)) + 5; }
+                    if(op === '+') { 
+                        n1 = Math.floor(Math.random() * 50) + 10; 
+                        n2 = Math.floor(Math.random() * 40) + 5; 
+                    } else { 
+                        n1 = Math.floor(Math.random() * 80) + 20; 
+                        n2 = Math.floor(Math.random() * (n1 - 10)) + 5; 
+                    }
                 }
             }
 
             state.answer = (op === '+') ? n1 + n2 : n1 - n2;
-            els.num1.innerText = n1; els.num2.innerText = n2; els.op.innerText = op;
+
+            // 切換橫式或直式介面
+            if(state.level === 3 && state.gameMode === 'normal') {
+                els.hDisplay.classList.add('hidden');
+                els.vDisplay.classList.remove('hidden');
+                els.vNum1.innerText = n1;
+                els.vNum2.innerText = n2;
+                els.vOp.innerText = op;
+            } else {
+                els.vDisplay.classList.add('hidden');
+                els.hDisplay.classList.remove('hidden');
+                els.num1.innerText = n1; 
+                els.num2.innerText = n2; 
+                els.op.innerText = op;
+            }
 
             renderVisuals(n1, n2, op);
             generateOptions(state.answer);
@@ -544,35 +595,63 @@
 
         function renderVisuals(n1, n2, op) {
             els.visual.innerHTML = '';
-            if(state.level === 3 && !state.gameMode.startsWith('infinite')) return; 
+            // Lv3 不顯示陣列點點，專心練習直式對位算式
+            if(state.level === 3 && state.gameMode === 'normal') return; 
 
             const imgClass = 'math-icon icon-img'; 
-            function createDots(count, isSecondary = false) {
+
+            if(op === '+') {
+                // 加法：顯示兩組獨立圖示
+                function createDots(count, isSecondary = false) {
+                    const container = document.createElement('div');
+                    container.style.display = 'flex'; container.style.gap = '5px';
+                    let dotsLeft = count;
+                    while(dotsLeft > 0) {
+                        const group = document.createElement('div'); group.className = 'ten-frame-group';
+                        let groupCount = Math.min(5, dotsLeft);
+                        for(let i=0; i<groupCount; i++) {
+                            const dot = document.createElement('div');
+                            dot.className = isSecondary ? `${imgClass} sec` : imgClass;
+                            group.appendChild(dot);
+                        }
+                        container.appendChild(group); dotsLeft -= groupCount;
+                    }
+                    return container;
+                }
+                els.visual.appendChild(createDots(n1, false)); 
+                const opSign = document.createElement('div'); opSign.innerText = op; opSign.style.color = '#aaa'; opSign.style.fontSize = '1.5rem';
+                els.visual.appendChild(opSign);
+                els.visual.appendChild(createDots(n2, true)); 
+            } else {
+                // 減法優化：只顯示被減數 N1 個，其中 N2 個加上打叉/半透明效果
                 const container = document.createElement('div');
                 container.style.display = 'flex'; container.style.gap = '5px';
-                let dotsLeft = count;
+                let dotsLeft = n1;
+                let removedCount = 0;
+
                 while(dotsLeft > 0) {
                     const group = document.createElement('div'); group.className = 'ten-frame-group';
                     let groupCount = Math.min(5, dotsLeft);
                     for(let i=0; i<groupCount; i++) {
                         const dot = document.createElement('div');
-                        dot.className = isSecondary ? `${imgClass} sec` : imgClass;
+                        // 從後面的點點開始打叉，符合「劃掉/拿走」的視覺順序
+                        if ((n1 - (n1 - dotsLeft + i)) <= n2) {
+                            dot.className = `${imgClass} icon-removed`;
+                        } else {
+                            dot.className = imgClass;
+                        }
                         group.appendChild(dot);
                     }
                     container.appendChild(group); dotsLeft -= groupCount;
                 }
-                return container;
+                els.visual.appendChild(container);
             }
-            els.visual.appendChild(createDots(n1, false)); 
-            const opSign = document.createElement('div'); opSign.innerText = op; opSign.style.color = '#aaa';
-            els.visual.appendChild(opSign);
-            els.visual.appendChild(createDots(n2, true)); 
         }
 
         function generateOptions(correct) {
             els.options.innerHTML = '';
             let opts = new Set(); opts.add(correct);
-            let range = (state.level === 3 && !state.gameMode.startsWith('infinite')) ? 10 : 3; 
+            let range = (state.level === 3 && state.gameMode === 'normal') ? 10 : 3; 
 
             while(opts.size < 4) {
                 let fake = correct + Math.floor(Math.random() * (range*2 + 1)) - range;
@@ -587,7 +666,8 @@
         }
 
         function checkAnswer(val) {
-            if(!state.isPlaying || state.isPaused) return;
+            if(!state.isPlaying || state.isPaused || isProcessingAnswer) return;
+            isProcessingAnswer = true; // 鎖定防重複觸發
 
             if(val === state.answer) {
                 playSound('correct');
@@ -601,44 +681,50 @@
                 els.hero.classList.add('hero-shoot');
                 setTimeout(() => els.hero.classList.remove('hero-shoot'), 200);
 
-                if (state.gameMode.startsWith('infinite')) {
-                    // 里程碑檢查 (每10題)
-                    if (state.infiniteCount % 10 === 0) {
-                        showMilestone();
+                setTimeout(() => {
+                    if (state.gameMode.startsWith('infinite')) {
+                        if (state.infiniteCount % 10 === 0) {
+                            showMilestone();
+                        } else {
+                            nextQuestion();
+                        }
                     } else {
-                        nextQuestion();
+                        let target = LEVEL_TARGETS[state.level];
+                        if(state.levelProgress >= target) {
+                            if(state.level < 3) showLevelUp(); else showVictory();
+                        } else {
+                            nextQuestion();
+                        }
                     }
-                } else {
-                    let target = LEVEL_TARGETS[state.level];
-                    if(state.levelProgress >= target) {
-                        if(state.level < 3) showLevelUp(); else showVictory();
-                    } else {
-                        nextQuestion();
-                    }
-                }
+                }, 400);
             } else {
                 playSound('wrong');
                 state.energy -= 20;
                 updateUI();
                 els.boom.classList.remove('boom-anim'); void els.boom.offsetWidth; els.boom.classList.add('boom-anim');
-                if(state.energy <= 0) gameOver();
+                
+                setTimeout(() => {
+                    if(state.energy <= 0) {
+                        gameOver();
+                    } else {
+                        isProcessingAnswer = false; // 允許重答
+                    }
+                }, 400);
             }
         }
 
         function showMilestone() {
-            // 暫時停止互動
             els.options.innerHTML = ''; 
             playSound('levelup');
             document.getElementById('milestone-count').innerText = state.infiniteCount;
             els.screens.milestone.classList.remove('hidden');
             
-            // 3秒後自動繼續
             setTimeout(() => {
                 if (state.isPlaying) {
                     els.screens.milestone.classList.add('hidden');
                     nextQuestion();
                 }
-            }, 3000);
+            }, 2500);
         }
 
         function showLevelUp() { state.isPlaying = false; playSound('levelup'); els.screens.levelup.classList.remove('hidden'); }
@@ -649,7 +735,13 @@
             else startGame(state.level);
         }
         function gameOver() { state.isPlaying = false; clearInterval(state.timer); playSound('gameover'); els.screens.result.classList.remove('hidden'); document.getElementById('final-score').innerText = state.score; }
-        function backToMode() { state.isPlaying = false; clearInterval(state.timer); Object.values(els.screens).forEach(el => el.classList.add('hidden')); els.screens.mode.classList.remove('hidden'); }
+        function backToMode() { 
+            state.isPlaying = false; 
+            if(window.speechSynthesis) window.speechSynthesis.cancel();
+            clearInterval(state.timer); 
+            Object.values(els.screens).forEach(el => el.classList.add('hidden')); 
+            els.screens.mode.classList.remove('hidden'); 
+        }
     </script>
 </body>
 </html>
