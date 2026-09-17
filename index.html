@@ -60,7 +60,6 @@
             flex: 1; width: 100%; min-height: 0; position: relative;
         }
 
-        /* 機甲英雄舞台與圖片 */
         .robot-stage {
             position: relative; width: 130px; height: 130px;
             display: flex; justify-content: center; align-items: center; margin-bottom: 5px;
@@ -72,7 +71,6 @@
         }
         @keyframes floatRobot { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
-        /* 答對攻擊/爆炸 Effect Overlay (支援圖檔與 Emoji 兩用) */
         .boom-effect {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
             width: 160px; height: 160px; pointer-events: none; opacity: 0; z-index: 10;
@@ -103,7 +101,6 @@
         .opt-btn.correct { background: #2ecc71 !important; color: #fff !important; border-color: #27ae60 !important; }
         .opt-btn.wrong { background: #e74c3c !important; color: #fff !important; border-color: #c0392b !important; }
 
-        /* Modal Overlay */
         .modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(15, 23, 30, 0.92); backdrop-filter: blur(6px);
@@ -127,7 +124,6 @@
 <body>
 
     <div class="app-container">
-        <!-- Top HUD -->
         <div class="hud">
             <div class="hud-btn-group">
                 <button class="hud-icon-btn" id="sound-btn" onclick="toggleSound()">🔊</button>
@@ -143,21 +139,17 @@
 
         <div class="progress-text">進度：<span id="current-q-num">1</span> / 25</div>
 
-        <!-- Main Game Area -->
         <div class="main-game-area">
-            <!-- 機甲英雄圖像舞台 (離線/抓不到圖自動備案 Emoji 🤖) -->
             <div class="robot-stage">
                 <img src="hero.png" id="robot-hero-img" class="robot-img" onerror="this.style.display='none'; document.getElementById('emoji-robot').style.display='block';">
                 <span id="emoji-robot" style="font-size:4.5rem; display:none;">🤖</span>
 
-                <!-- 答對衝擊波/爆炸圖檔 (離線自動備案 💥) -->
                 <div id="boom-box" class="boom-effect">
                     <img src="boom.png" style="width:100%; height:100%; object-fit:contain;" onerror="this.style.display='none'; document.getElementById('emoji-boom').style.display='block';">
                     <span id="emoji-boom" style="font-size:4rem; display:none;">💥</span>
                 </div>
             </div>
 
-            <!-- 算式卡片 -->
             <div class="math-card">
                 <div class="math-operator" id="operator-text">-</div>
                 <div class="math-num" id="num-top">76</div>
@@ -167,10 +159,8 @@
             </div>
         </div>
 
-        <!-- 選項按鈕區 -->
         <div class="options-grid" id="options-grid"></div>
 
-        <!-- 難度選擇 Modal -->
         <div id="level-modal" class="modal">
             <div class="modal-card">
                 <div style="height: 80px; display:flex; justify-content:center; align-items:center; margin-bottom:10px;">
@@ -185,7 +175,6 @@
             </div>
         </div>
 
-        <!-- 結算/暫停/過關 Modal (抓不到圖時自動轉 Emoji) -->
         <div id="game-modal" class="modal hidden">
             <div class="modal-card">
                 <div style="height: 100px; display:flex; justify-content:center; align-items:center; margin-bottom:10px;">
@@ -204,18 +193,11 @@
         let audioCtx = null;
         let soundEnabled = true, vibrateEnabled = true;
 
-        function initAudio() {
-            if (!audioCtx) audioCtx = new AudioContext();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-        }
-
-        function triggerVibrate(ms = 40) {
-            if (vibrateEnabled && navigator.vibrate) navigator.vibrate(ms);
-        }
+        function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+        function triggerVibrate(ms = 40) { if (vibrateEnabled && navigator.vibrate) navigator.vibrate(ms); }
 
         function playSound(type) {
-            if (!soundEnabled) return;
-            initAudio(); if (!audioCtx) return;
+            if (!soundEnabled) return; initAudio(); if (!audioCtx) return;
             const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
             const now = audioCtx.currentTime;
@@ -238,6 +220,7 @@
         let currentQuestion = 0, totalQuestions = 25, score = 0;
         let highScore = parseInt(localStorage.getItem('addminus_high_score')) || 0;
         let correctAnswer = 0, isAnsweringLocked = false;
+        let questionPool = []; // 洗牌不放回題庫
 
         function selectDifficulty(diff) {
             currentDifficulty = diff;
@@ -250,32 +233,43 @@
             document.getElementById('level-modal').classList.remove('hidden');
         }
 
+        // 生成當前難度下的完整題庫並打亂（絕不重複）
+        function buildQuestionPool() {
+            const raw = [];
+            let maxLimit = currentDifficulty === 1 ? 20 : (currentDifficulty === 2 ? 50 : 100);
+            
+            // 隨機生成 100 題候選算式
+            while (raw.length < 80) {
+                const isAdd = Math.random() > 0.5;
+                let top, bottom, ans;
+                if (isAdd) {
+                    top = Math.floor(Math.random() * (maxLimit / 2)) + 1;
+                    bottom = Math.floor(Math.random() * (maxLimit / 2)) + 1;
+                    ans = top + bottom;
+                } else {
+                    top = Math.floor(Math.random() * (maxLimit - 5)) + 5;
+                    bottom = Math.floor(Math.random() * (top - 1)) + 1;
+                    ans = top - bottom;
+                }
+                const key = `${top}_${isAdd ? '+' : '-'}_${bottom}`;
+                if (!raw.some(item => item.key === key)) {
+                    raw.push({ top, bottom, isAdd, ans, key });
+                }
+            }
+            // 打亂題庫
+            questionPool = raw.sort(() => Math.random() - 0.5);
+        }
+
         function generateQuestion() {
             isAnsweringLocked = false;
-            const isAddition = Math.random() > 0.5;
-            let top, bottom;
+            if (questionPool.length === 0) buildQuestionPool();
 
-            if (currentDifficulty === 1) { // 20 以內
-                if (isAddition) { top = Math.floor(Math.random() * 10) + 1; bottom = Math.floor(Math.random() * 9) + 1; }
-                else { top = Math.floor(Math.random() * 15) + 5; bottom = Math.floor(Math.random() * (top - 1)) + 1; }
-            } else if (currentDifficulty === 2) { // 50 以內
-                if (isAddition) { top = Math.floor(Math.random() * 30) + 5; bottom = Math.floor(Math.random() * 20) + 5; }
-                else { top = Math.floor(Math.random() * 40) + 10; bottom = Math.floor(Math.random() * (top - 5)) + 5; }
-            } else { // 100 以內
-                if (isAddition) { top = Math.floor(Math.random() * 50) + 10; bottom = Math.floor(Math.random() * 40) + 5; }
-                else { top = Math.floor(Math.random() * 60) + 20; bottom = Math.floor(Math.random() * (top - 5)) + 5; }
-            }
+            const q = questionPool.pop();
+            correctAnswer = q.ans;
 
-            if (isAddition) {
-                correctAnswer = top + bottom;
-                document.getElementById('operator-text').innerText = '+';
-            } else {
-                correctAnswer = top - bottom;
-                document.getElementById('operator-text').innerText = '-';
-            }
-
-            document.getElementById('num-top').innerText = top;
-            document.getElementById('num-bottom').innerText = bottom;
+            document.getElementById('operator-text').innerText = q.isAdd ? '+' : '-';
+            document.getElementById('num-top').innerText = q.top;
+            document.getElementById('num-bottom').innerText = q.bottom;
             document.getElementById('current-q-num').innerText = currentQuestion + 1;
             generateOptions();
         }
@@ -325,11 +319,8 @@
         function togglePause() {
             const resultImg = document.getElementById('modal-result-img');
             const fallbackEmoji = document.getElementById('modal-icon-emoji');
-            
-            resultImg.src = 'hero.png';
-            resultImg.style.display = 'block';
-            fallbackEmoji.innerText = "🤖";
-            fallbackEmoji.style.display = 'none';
+            resultImg.src = 'hero.png'; resultImg.style.display = 'block';
+            fallbackEmoji.innerText = "🤖"; fallbackEmoji.style.display = 'none';
 
             document.getElementById('modal-title').innerText = "特訓暫停中";
             document.getElementById('modal-desc').innerText = `當前進度：${currentQuestion + 1} / ${totalQuestions}`;
@@ -342,17 +333,10 @@
             
             const resultImg = document.getElementById('modal-result-img');
             const fallbackEmoji = document.getElementById('modal-icon-emoji');
+            resultImg.style.display = 'block'; fallbackEmoji.style.display = 'none';
 
-            resultImg.style.display = 'block';
-            fallbackEmoji.style.display = 'none';
-
-            if (score >= 180) {
-                resultImg.src = 'energy.png';
-                fallbackEmoji.innerText = "⚡";
-            } else {
-                resultImg.src = 'lose.png';
-                fallbackEmoji.innerText = "💥";
-            }
+            if (score >= 180) { resultImg.src = 'energy.png'; fallbackEmoji.innerText = "⚡"; }
+            else { resultImg.src = 'lose.png'; fallbackEmoji.innerText = "💥"; }
 
             document.getElementById('modal-title').innerText = isNewHigh ? "🎉 突破新紀錄！" : (score >= 180 ? "⚡ 充能成功！" : "💥 機甲過熱！");
             document.getElementById('modal-desc').innerText = `最終得分：${score} (最高紀錄: ${highScore})`;
@@ -362,6 +346,7 @@
 
         function startGame() {
             initAudio(); currentQuestion = 0; score = 0;
+            buildQuestionPool();
             updateScoreUI();
             document.getElementById('game-modal').classList.add('hidden');
             generateQuestion();
