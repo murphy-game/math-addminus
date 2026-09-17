@@ -7,7 +7,7 @@
     <style>
         :root {
             --bg-color: #1a252f;
-            --card-bg: #2c3e50;
+            --card-bg: rgba(44, 62, 80, 0.9);
             --accent-cyan: #00cec9;
             --accent-yellow: #f1c40f;
             --text-color: #ffffff;
@@ -19,7 +19,11 @@
 
         body {
             font-family: "Chalkboard SE", "Comic Sans MS", "微軟正黑體", sans-serif;
-            background-color: var(--bg-color); color: var(--text-color);
+            background-color: var(--bg-color);
+            background-image: url('bg.png');
+            background-size: cover;
+            background-position: center;
+            color: var(--text-color);
             margin: 0; padding: 0; display: flex; justify-content: center; align-items: center;
             min-height: 100vh; min-height: 100dvh; overflow: hidden;
         }
@@ -32,12 +36,12 @@
 
         .hud {
             display: flex; justify-content: space-between; align-items: center;
-            background: rgba(255, 255, 255, 0.1); padding: 6px 12px; border-radius: 12px;
-            backdrop-filter: blur(5px);
+            background: rgba(15, 23, 30, 0.85); padding: 6px 12px; border-radius: 12px;
+            backdrop-filter: blur(5px); border: 1px solid rgba(0, 206, 201, 0.3);
         }
         .hud-btn-group { display: flex; gap: 6px; }
         .hud-icon-btn {
-            background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
             color: #fff; width: 34px; height: 34px; border-radius: 50%; font-size: 0.95rem;
             cursor: pointer; display: flex; justify-content: center; align-items: center;
         }
@@ -48,23 +52,41 @@
 
         .progress-text {
             text-align: center; font-size: 0.85rem; color: var(--accent-yellow); font-weight: bold; margin: 4px 0;
+            background: rgba(0,0,0,0.5); padding: 3px 10px; border-radius: 20px; align-self: center;
         }
 
         .main-game-area {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            flex: 1; width: 100%; min-height: 0;
+            flex: 1; width: 100%; min-height: 0; position: relative;
         }
 
-        .robot-avatar {
-            font-size: 3.2rem; line-height: 1; margin-bottom: 5px;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); animation: floatRobot 2.5s ease-in-out infinite;
+        /* 機甲英雄舞台與圖片 */
+        .robot-stage {
+            position: relative; width: 130px; height: 130px;
+            display: flex; justify-content: center; align-items: center; margin-bottom: 5px;
         }
-        @keyframes floatRobot { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        .robot-img {
+            max-width: 100%; max-height: 100%; object-fit: contain;
+            filter: drop-shadow(0 6px 12px rgba(0, 206, 201, 0.4));
+            animation: floatRobot 2.5s ease-in-out infinite;
+        }
+        @keyframes floatRobot { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+        /* 答對攻擊/爆炸 Effect Overlay (支援圖檔與 Emoji 兩用) */
+        .boom-effect {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+            width: 160px; height: 160px; pointer-events: none; opacity: 0; z-index: 10;
+            transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; justify-content: center; align-items: center;
+        }
+        .boom-effect.active {
+            transform: translate(-50%, -50%) scale(1.2); opacity: 1;
+        }
 
         .math-card {
-            background: #0f171e; border: 3px solid var(--accent-cyan);
+            background: rgba(15, 23, 30, 0.9); border: 3px solid var(--accent-cyan);
             border-radius: 16px; padding: 10px 35px; text-align: right;
-            box-shadow: 0 8px 20px rgba(0, 206, 201, 0.2); position: relative; margin-bottom: 8px; min-width: 180px;
+            box-shadow: 0 8px 20px rgba(0, 206, 201, 0.3); position: relative; margin-bottom: 8px; min-width: 180px;
         }
         .math-num { font-size: 2.2rem; font-weight: bold; letter-spacing: 2px; line-height: 1.2; color: #fff; }
         .math-line { width: 100%; height: 3px; background-color: var(--accent-yellow); margin: 4px 0; }
@@ -75,20 +97,22 @@
             background: var(--btn-bg); border: none; border-bottom: 5px solid #bdc3c7;
             border-radius: 16px; padding: 14px 0; font-size: 1.6rem; font-weight: bold;
             color: var(--btn-text); cursor: pointer; transition: all 0.08s ease;
-            display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
         .opt-btn:active { transform: translateY(3px); border-bottom-width: 2px; background: #dcdde1; }
         .opt-btn.correct { background: #2ecc71 !important; color: #fff !important; border-color: #27ae60 !important; }
         .opt-btn.wrong { background: #e74c3c !important; color: #fff !important; border-color: #c0392b !important; }
 
+        /* Modal Overlay */
         .modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 30, 0.92); backdrop-filter: blur(5px);
+            background: rgba(15, 23, 30, 0.92); backdrop-filter: blur(6px);
             z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px;
         }
         .modal-card {
             background: var(--card-bg); border: 3px solid var(--accent-cyan);
             border-radius: 20px; padding: 20px; width: 85%; max-width: 320px; text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 206, 201, 0.3);
         }
         .menu-btn {
             background: transparent; border: 2px solid var(--accent-cyan);
@@ -103,6 +127,7 @@
 <body>
 
     <div class="app-container">
+        <!-- Top HUD -->
         <div class="hud">
             <div class="hud-btn-group">
                 <button class="hud-icon-btn" id="sound-btn" onclick="toggleSound()">🔊</button>
@@ -118,8 +143,21 @@
 
         <div class="progress-text">進度：<span id="current-q-num">1</span> / 25</div>
 
+        <!-- Main Game Area -->
         <div class="main-game-area">
-            <div class="robot-avatar">🤖</div>
+            <!-- 機甲英雄圖像舞台 (離線/抓不到圖自動備案 Emoji 🤖) -->
+            <div class="robot-stage">
+                <img src="hero.png" id="robot-hero-img" class="robot-img" onerror="this.style.display='none'; document.getElementById('emoji-robot').style.display='block';">
+                <span id="emoji-robot" style="font-size:4.5rem; display:none;">🤖</span>
+
+                <!-- 答對衝擊波/爆炸圖檔 (離線自動備案 💥) -->
+                <div id="boom-box" class="boom-effect">
+                    <img src="boom.png" style="width:100%; height:100%; object-fit:contain;" onerror="this.style.display='none'; document.getElementById('emoji-boom').style.display='block';">
+                    <span id="emoji-boom" style="font-size:4rem; display:none;">💥</span>
+                </div>
+            </div>
+
+            <!-- 算式卡片 -->
             <div class="math-card">
                 <div class="math-operator" id="operator-text">-</div>
                 <div class="math-num" id="num-top">76</div>
@@ -129,12 +167,16 @@
             </div>
         </div>
 
+        <!-- 選項按鈕區 -->
         <div class="options-grid" id="options-grid"></div>
 
         <!-- 難度選擇 Modal -->
         <div id="level-modal" class="modal">
             <div class="modal-card">
-                <div style="font-size: 3rem; margin-bottom: 5px;">🤖</div>
+                <div style="height: 80px; display:flex; justify-content:center; align-items:center; margin-bottom:10px;">
+                    <img src="hero.png" style="max-height:100%; object-fit:contain;" onerror="this.style.display='none'; document.getElementById('modal-emoji').style.display='block';">
+                    <span id="modal-emoji" style="font-size:3.5rem; display:none;">🤖</span>
+                </div>
                 <h2 style="color:var(--accent-cyan); margin: 5px 0;">加減法速算特訓</h2>
                 <p style="color:#ccc; font-size:0.85rem; margin-bottom:12px;">請選擇訓練難度</p>
                 <button class="menu-btn" onclick="selectDifficulty(1)">🟢 見習駕駛 <span class="level-tag">20 以內加減 (入門)</span></button>
@@ -143,10 +185,13 @@
             </div>
         </div>
 
-        <!-- 結算/暫停 Modal -->
+        <!-- 結算/暫停/過關 Modal (抓不到圖時自動轉 Emoji) -->
         <div id="game-modal" class="modal hidden">
             <div class="modal-card">
-                <div style="font-size: 3.5rem; margin-bottom: 10px;" id="modal-icon">🤖</div>
+                <div style="height: 100px; display:flex; justify-content:center; align-items:center; margin-bottom:10px;">
+                    <img src="energy.png" id="modal-result-img" style="max-height:100%; object-fit:contain;" onerror="this.style.display='none'; document.getElementById('modal-icon-emoji').style.display='block';">
+                    <span id="modal-icon-emoji" style="font-size:3.5rem; display:none;">⚡</span>
+                </div>
                 <h2 id="modal-title" style="color:var(--accent-cyan); margin: 5px 0;">充能完成</h2>
                 <p id="modal-desc" style="color:#ccc; font-size:0.9rem; margin-bottom:15px;">本次得分：0</p>
                 <button class="menu-btn" style="background:var(--accent-cyan); color:#000;" onclick="openLevelSelect()">重新選擇難度 ⚡</button>
@@ -252,11 +297,19 @@
             });
         }
 
+        function triggerBoomEffect() {
+            const boom = document.getElementById('boom-box');
+            boom.classList.add('active');
+            setTimeout(() => boom.classList.remove('active'), 350);
+        }
+
         function checkAnswer(selected, btn) {
             if (isAnsweringLocked) return;
             if (selected === correctAnswer) {
                 isAnsweringLocked = true; btn.classList.add('correct');
                 playSound('correct'); triggerVibrate(40);
+                triggerBoomEffect();
+
                 score += 10; document.getElementById('score').innerText = score;
                 setTimeout(() => {
                     currentQuestion++;
@@ -270,7 +323,14 @@
         }
 
         function togglePause() {
-            document.getElementById('modal-icon').innerText = "⏸️";
+            const resultImg = document.getElementById('modal-result-img');
+            const fallbackEmoji = document.getElementById('modal-icon-emoji');
+            
+            resultImg.src = 'hero.png';
+            resultImg.style.display = 'block';
+            fallbackEmoji.innerText = "🤖";
+            fallbackEmoji.style.display = 'none';
+
             document.getElementById('modal-title').innerText = "特訓暫停中";
             document.getElementById('modal-desc').innerText = `當前進度：${currentQuestion + 1} / ${totalQuestions}`;
             document.getElementById('game-modal').classList.remove('hidden');
@@ -279,8 +339,22 @@
         function endGame() {
             let isNewHigh = false;
             if (score > highScore) { highScore = score; localStorage.setItem('addminus_high_score', highScore); isNewHigh = true; }
-            document.getElementById('modal-icon').innerText = isNewHigh ? "🏆" : "🤖";
-            document.getElementById('modal-title').innerText = isNewHigh ? "🎉 突破新紀錄！" : "充能完成！";
+            
+            const resultImg = document.getElementById('modal-result-img');
+            const fallbackEmoji = document.getElementById('modal-icon-emoji');
+
+            resultImg.style.display = 'block';
+            fallbackEmoji.style.display = 'none';
+
+            if (score >= 180) {
+                resultImg.src = 'energy.png';
+                fallbackEmoji.innerText = "⚡";
+            } else {
+                resultImg.src = 'lose.png';
+                fallbackEmoji.innerText = "💥";
+            }
+
+            document.getElementById('modal-title').innerText = isNewHigh ? "🎉 突破新紀錄！" : (score >= 180 ? "⚡ 充能成功！" : "💥 機甲過熱！");
             document.getElementById('modal-desc').innerText = `最終得分：${score} (最高紀錄: ${highScore})`;
             document.getElementById('game-modal').classList.remove('hidden');
             updateScoreUI();
