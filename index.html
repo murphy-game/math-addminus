@@ -47,15 +47,6 @@
             cursor: pointer; display: flex; justify-content: center; align-items: center;
         }
 
-        /* 新增血量心心 UI */
-        .hp-box {
-            font-size: 1.2rem; letter-spacing: 2px;
-            display: flex; align-items: center; justify-content: center;
-            text-shadow: 0 0 8px rgba(255, 118, 117, 0.8);
-        }
-        .hp-box.shake { animation: hpShake 0.3s ease; }
-        @keyframes hpShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
-
         .score-box { text-align: right; }
         .score-box div { font-size: 0.65rem; color: #ccc; }
         .score-box span { font-size: 0.95rem; font-weight: bold; color: var(--accent-yellow); }
@@ -70,7 +61,6 @@
             flex: 1; width: 100%; min-height: 0; position: relative;
         }
 
-        /* 機甲英雄舞台與圖片 */
         .robot-stage {
             position: relative; width: 120px; height: 120px;
             display: flex; justify-content: center; align-items: center; margin-bottom: 5px;
@@ -82,9 +72,10 @@
         }
         @keyframes floatRobot { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
+        /* 爆炸特效容器：移至中央卡片前方，不再遮擋機甲戰士 */
         .boom-effect {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
-            width: 160px; height: 160px; pointer-events: none; opacity: 0; z-index: 10;
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0);
+            width: 180px; height: 180px; pointer-events: none; opacity: 0; z-index: 20;
             transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex; justify-content: center; align-items: center;
         }
@@ -102,7 +93,7 @@
         .math-line { width: 100%; height: 3px; background-color: var(--accent-yellow); margin: 4px 0; }
         .math-operator { position: absolute; left: 15px; bottom: 42px; font-size: 1.8rem; color: var(--accent-yellow); font-weight: bold; }
 
-        /* Lv1 橫式算式卡片 (含語音按鈕) */
+        /* Lv1 橫式算式卡片 */
         .math-card-horizontal {
             background: rgba(15, 23, 30, 0.9); border: 3px solid var(--accent-cyan);
             border-radius: 16px; padding: 12px 20px; text-align: center;
@@ -137,13 +128,6 @@
             border-radius: 20px; padding: 20px; width: 85%; max-width: 320px; text-align: center;
             box-shadow: 0 10px 30px rgba(0, 206, 201, 0.3); transition: border-color 0.3s;
         }
-        
-        .modal-card.lose-theme {
-            border-color: var(--accent-red);
-            box-shadow: 0 10px 30px rgba(255, 118, 117, 0.4);
-            animation: pulseRed 1.5s infinite;
-        }
-        @keyframes pulseRed { 0%, 100% { border-color: var(--accent-red); } 50% { border-color: #d63031; } }
 
         .menu-btn {
             background: transparent; border: 2px solid var(--accent-cyan);
@@ -165,8 +149,6 @@
                 <button class="hud-icon-btn" onclick="openLevelSelect()" title="返回選單">🏠</button>
                 <button class="hud-icon-btn" onclick="togglePause()">⏸️</button>
             </div>
-            <!-- 心心血量顯示區 -->
-            <div class="hp-box" id="hp-display">❤️❤️❤️</div>
             <div class="score-box">
                 <div>BEST: <span id="high-score">0</span></div>
                 <div>SCORE: <span id="score">0</span></div>
@@ -179,14 +161,15 @@
             <div class="robot-stage">
                 <img src="hero.png" id="robot-hero-img" class="robot-img" onerror="this.style.display='none'; document.getElementById('emoji-robot').style.display='block';">
                 <span id="emoji-robot" style="font-size:4.5rem; display:none;">🤖</span>
-
-                <div id="boom-box" class="boom-effect">
-                    <img src="boom.png" style="width:100%; height:100%; object-fit:contain;" onerror="this.style.display='none'; document.getElementById('emoji-boom').style.display='block';">
-                    <span id="emoji-boom" style="font-size:4rem; display:none;">💥</span>
-                </div>
             </div>
 
-            <!-- Lv1 橫式算式卡片 (朗讀語音) -->
+            <!-- 爆炸特效：移至卡片區域上方 -->
+            <div id="boom-box" class="boom-effect">
+                <img src="boom.png" style="width:100%; height:100%; object-fit:contain;" onerror="this.style.display='none'; document.getElementById('emoji-boom').style.display='block';">
+                <span id="emoji-boom" style="font-size:4.5rem; display:none;">💥</span>
+            </div>
+
+            <!-- Lv1 橫式算式卡片 -->
             <div class="math-card-horizontal" id="horizontal-card">
                 <div class="horizontal-formula"><span id="hz-num-top">12</span> <span id="hz-operator">-</span> <span id="hz-num-bottom">5</span> = ?</div>
                 <button class="speak-btn" onclick="speakCurrentQuestion()" title="朗讀題目">🔊</button>
@@ -213,7 +196,7 @@
             </div>
         </div>
 
-        <!-- 遊戲結果/失敗/暫停彈窗 -->
+        <!-- 遊戲結果彈窗 -->
         <div id="msg-modal" class="modal hidden">
             <div class="modal-card" id="msg-card">
                 <h2 id="msg-title" style="margin-top:0;">標題</h2>
@@ -228,8 +211,6 @@
         let currentLevel = 1;
         let score = 0;
         let highScore = parseInt(localStorage.getItem('math_high_score')) || 0;
-        let hp = 3;
-        let maxHp = 3;
         let questionCount = 0;
         let maxQuestions = 25;
         let currentQuestion = null;
@@ -238,15 +219,6 @@
         let vibrateEnabled = true;
 
         document.getElementById('high-score').innerText = highScore;
-
-        function updateHpUI() {
-            let hpStr = "";
-            for (let i = 0; i < maxHp; i++) {
-                hpStr += (i < hp) ? "❤️" : "🖤";
-            }
-            const hpEl = document.getElementById('hp-display');
-            hpEl.innerText = hpStr;
-        }
 
         function selectLevel(lvl) {
             currentLevel = lvl;
@@ -261,19 +233,16 @@
 
         function restartGame() {
             score = 0;
-            hp = maxHp;
             questionCount = 0;
             isAnsweringLocked = false;
             document.getElementById('score').innerText = score;
             document.getElementById('msg-modal').classList.add('hidden');
-            updateHpUI();
             nextQuestion();
         }
 
         function generateQuestion() {
             let num1, num2, op, ans;
             if (currentLevel === 1) {
-                // 20以內加減
                 op = Math.random() > 0.5 ? '+' : '-';
                 if (op === '+') {
                     num1 = Math.floor(Math.random() * 10) + 1;
@@ -285,7 +254,6 @@
                     ans = num1 - num2;
                 }
             } else if (currentLevel === 2) {
-                // 兩位數加減
                 op = Math.random() > 0.5 ? '+' : '-';
                 if (op === '+') {
                     num1 = Math.floor(Math.random() * 40) + 10;
@@ -297,14 +265,12 @@
                     ans = num1 - num2;
                 }
             } else {
-                // 九九乘法表
                 op = '×';
                 num1 = Math.floor(Math.random() * 9) + 1;
                 num2 = Math.floor(Math.random() * 9) + 1;
                 ans = num1 * num2;
             }
 
-            // 產生 4 個不重複干擾選項
             let options = [ans];
             while (options.length < 4) {
                 let offset = (Math.floor(Math.random() * 5) + 1) * (Math.random() > 0.5 ? 1 : -1);
@@ -346,7 +312,6 @@
                 document.getElementById('num-bottom').innerText = currentQuestion.num2;
             }
 
-            // 渲染選項
             const grid = document.getElementById('options-grid');
             grid.innerHTML = '';
             currentQuestion.options.forEach(opt => {
@@ -374,7 +339,6 @@
                     document.getElementById('high-score').innerText = highScore;
                 }
 
-                // 觸發爆炸特效
                 const boom = document.getElementById('boom-box');
                 boom.classList.add('active');
                 setTimeout(() => boom.classList.remove('active'), 500);
@@ -382,31 +346,9 @@
                 setTimeout(() => nextQuestion(), 600);
             } else {
                 btn.classList.add('wrong');
-                hp--;
-                updateHpUI();
-
-                const hpBox = document.getElementById('hp-display');
-                hpBox.classList.add('shake');
-                setTimeout(() => hpBox.classList.remove('shake'), 300);
-
                 if (vibrateEnabled && navigator.vibrate) navigator.vibrate(200);
-
-                if (hp <= 0) {
-                    isAnsweringLocked = true;
-                    setTimeout(() => showLoseModal(), 500);
-                } else {
-                    setTimeout(() => btn.classList.remove('wrong'), 600);
-                }
+                setTimeout(() => btn.classList.remove('wrong'), 600);
             }
-        }
-
-        function showLoseModal() {
-            const card = document.getElementById('msg-card');
-            card.className = 'modal-card lose-theme';
-            document.getElementById('msg-title').innerHTML = "💔 能量耗盡！";
-            document.getElementById('msg-title').style.color = "var(--accent-red)";
-            document.getElementById('msg-body').innerText = `機甲受到損害，本次獲得分數：${score} 分`;
-            document.getElementById('msg-modal').classList.remove('hidden');
         }
 
         function showWinModal() {
@@ -414,7 +356,7 @@
             card.className = 'modal-card';
             document.getElementById('msg-title').innerHTML = "🎉 特訓完成！";
             document.getElementById('msg-title').style.color = "var(--accent-cyan)";
-            document.getElementById('msg-body').innerText = `恭喜完成 25 題挑戰！最終得分：${score} 分`;
+            document.getElementById('msg-body').innerText = `恭喜完成 25 題心算特訓！最終得分：${score} 分`;
             document.getElementById('msg-modal').classList.remove('hidden');
         }
 
