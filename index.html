@@ -369,7 +369,7 @@
             if (selectedOpt === currentQuestion.ans) {
                 isAnsweringLocked = true;
                 btn.classList.add('correct');
-                playBeepSound(); // 答對發出輕快「嗶」音
+                playBeepSound();
                 score += 10;
                 document.getElementById('score').innerText = score;
                 if (score > highScore) {
@@ -380,7 +380,7 @@
 
                 setTimeout(() => nextQuestion(), 250);
             } else {
-                isAnsweringLocked = true;
+                // 答錯：按鈕變紅 + 扣心心 + 爆炸震動，但不自動跳題，留原題給孩子再次思考選擇
                 btn.classList.add('wrong');
                 hp--;
                 updateHpUI();
@@ -396,11 +396,12 @@
                 if (vibrateEnabled && navigator.vibrate) navigator.vibrate(200);
 
                 if (hp <= 0) {
+                    isAnsweringLocked = true;
                     setTimeout(() => showLoseModal(), 500);
                 } else {
+                    // 0.6 秒後將錯誤按鈕變回原樣，解鎖點擊，留原題讓孩子點選正確答案
                     setTimeout(() => {
                         btn.classList.remove('wrong');
-                        nextQuestion();
                     }, 600);
                 }
             }
