@@ -47,6 +47,14 @@
             cursor: pointer; display: flex; justify-content: center; align-items: center;
         }
 
+        .hp-box {
+            font-size: 1.2rem; letter-spacing: 2px;
+            display: flex; align-items: center; justify-content: center;
+            text-shadow: 0 0 8px rgba(255, 118, 117, 0.8);
+        }
+        .hp-box.shake { animation: hpShake 0.3s ease; }
+        @keyframes hpShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
         .score-box { text-align: right; }
         .score-box div { font-size: 0.65rem; color: #ccc; }
         .score-box span { font-size: 0.95rem; font-weight: bold; color: var(--accent-yellow); }
@@ -72,7 +80,6 @@
         }
         @keyframes floatRobot { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
-        /* 爆炸特效容器：移至中央卡片前方，不再遮擋機甲戰士 */
         .boom-effect {
             position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0);
             width: 180px; height: 180px; pointer-events: none; opacity: 0; z-index: 20;
@@ -83,7 +90,6 @@
             transform: translate(-50%, -50%) scale(1.2); opacity: 1;
         }
 
-        /* 直式算式卡片 */
         .math-card-vertical {
             background: rgba(15, 23, 30, 0.9); border: 3px solid var(--accent-cyan);
             border-radius: 16px; padding: 10px 35px; text-align: right;
@@ -93,7 +99,6 @@
         .math-line { width: 100%; height: 3px; background-color: var(--accent-yellow); margin: 4px 0; }
         .math-operator { position: absolute; left: 15px; bottom: 42px; font-size: 1.8rem; color: var(--accent-yellow); font-weight: bold; }
 
-        /* Lv1 橫式算式卡片 */
         .math-card-horizontal {
             background: rgba(15, 23, 30, 0.9); border: 3px solid var(--accent-cyan);
             border-radius: 16px; padding: 12px 20px; text-align: center;
@@ -129,6 +134,13 @@
             box-shadow: 0 10px 30px rgba(0, 206, 201, 0.3); transition: border-color 0.3s;
         }
 
+        .modal-card.lose-theme {
+            border-color: var(--accent-red);
+            box-shadow: 0 10px 30px rgba(255, 118, 117, 0.4);
+            animation: pulseRed 1.5s infinite;
+        }
+        @keyframes pulseRed { 0%, 100% { border-color: var(--accent-red); } 50% { border-color: #d63031; } }
+
         .menu-btn {
             background: transparent; border: 2px solid var(--accent-cyan);
             color: white; padding: 12px 20px; margin: 8px 0; font-size: 1.1rem; font-weight: bold;
@@ -149,6 +161,7 @@
                 <button class="hud-icon-btn" onclick="openLevelSelect()" title="返回選單">🏠</button>
                 <button class="hud-icon-btn" onclick="togglePause()">⏸️</button>
             </div>
+            <div class="hp-box" id="hp-display">❤️❤️❤️</div>
             <div class="score-box">
                 <div>BEST: <span id="high-score">0</span></div>
                 <div>SCORE: <span id="score">0</span></div>
@@ -163,19 +176,16 @@
                 <span id="emoji-robot" style="font-size:4.5rem; display:none;">🤖</span>
             </div>
 
-            <!-- 爆炸特效：移至卡片區域上方 -->
             <div id="boom-box" class="boom-effect">
                 <img src="boom.png" style="width:100%; height:100%; object-fit:contain;" onerror="this.style.display='none'; document.getElementById('emoji-boom').style.display='block';">
                 <span id="emoji-boom" style="font-size:4.5rem; display:none;">💥</span>
             </div>
 
-            <!-- Lv1 橫式算式卡片 -->
             <div class="math-card-horizontal" id="horizontal-card">
                 <div class="horizontal-formula"><span id="hz-num-top">12</span> <span id="hz-operator">-</span> <span id="hz-num-bottom">5</span> = ?</div>
                 <button class="speak-btn" onclick="speakCurrentQuestion()" title="朗讀題目">🔊</button>
             </div>
 
-            <!-- Lv2/Lv3 直式算式卡片 -->
             <div class="math-card-vertical hidden" id="vertical-card">
                 <div class="math-num" id="num-top">76</div>
                 <div class="math-num" id="num-bottom">28</div>
@@ -186,7 +196,6 @@
             <div class="options-grid" id="options-grid"></div>
         </div>
 
-        <!-- 關卡選擇彈窗 -->
         <div id="level-modal" class="modal">
             <div class="modal-card">
                 <h2 style="color:var(--accent-cyan); margin-top:0;">⚡ 選擇特訓難度</h2>
@@ -196,7 +205,6 @@
             </div>
         </div>
 
-        <!-- 遊戲結果彈窗 -->
         <div id="msg-modal" class="modal hidden">
             <div class="modal-card" id="msg-card">
                 <h2 id="msg-title" style="margin-top:0;">標題</h2>
@@ -211,6 +219,8 @@
         let currentLevel = 1;
         let score = 0;
         let highScore = parseInt(localStorage.getItem('math_high_score')) || 0;
+        let hp = 3;
+        let maxHp = 3;
         let questionCount = 0;
         let maxQuestions = 25;
         let currentQuestion = null;
@@ -218,7 +228,33 @@
         let soundEnabled = true;
         let vibrateEnabled = true;
 
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playBeepSound() {
+            if (!soundEnabled) return;
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            } catch(e) {}
+        }
+
         document.getElementById('high-score').innerText = highScore;
+
+        function updateHpUI() {
+            let hpStr = "";
+            for (let i = 0; i < maxHp; i++) {
+                hpStr += (i < hp) ? "❤️" : "🖤";
+            }
+            document.getElementById('hp-display').innerText = hpStr;
+        }
 
         function selectLevel(lvl) {
             currentLevel = lvl;
@@ -233,10 +269,12 @@
 
         function restartGame() {
             score = 0;
+            hp = maxHp;
             questionCount = 0;
             isAnsweringLocked = false;
             document.getElementById('score').innerText = score;
             document.getElementById('msg-modal').classList.add('hidden');
+            updateHpUI();
             nextQuestion();
         }
 
@@ -331,6 +369,7 @@
             if (selectedOpt === currentQuestion.ans) {
                 isAnsweringLocked = true;
                 btn.classList.add('correct');
+                playBeepSound(); // 答對發出輕快「嗶」音
                 score += 10;
                 document.getElementById('score').innerText = score;
                 if (score > highScore) {
@@ -339,16 +378,41 @@
                     document.getElementById('high-score').innerText = highScore;
                 }
 
+                setTimeout(() => nextQuestion(), 250);
+            } else {
+                isAnsweringLocked = true;
+                btn.classList.add('wrong');
+                hp--;
+                updateHpUI();
+
                 const boom = document.getElementById('boom-box');
                 boom.classList.add('active');
                 setTimeout(() => boom.classList.remove('active'), 500);
 
-                setTimeout(() => nextQuestion(), 600);
-            } else {
-                btn.classList.add('wrong');
+                const hpBox = document.getElementById('hp-display');
+                hpBox.classList.add('shake');
+                setTimeout(() => hpBox.classList.remove('shake'), 300);
+
                 if (vibrateEnabled && navigator.vibrate) navigator.vibrate(200);
-                setTimeout(() => btn.classList.remove('wrong'), 600);
+
+                if (hp <= 0) {
+                    setTimeout(() => showLoseModal(), 500);
+                } else {
+                    setTimeout(() => {
+                        btn.classList.remove('wrong');
+                        nextQuestion();
+                    }, 600);
+                }
             }
+        }
+
+        function showLoseModal() {
+            const card = document.getElementById('msg-card');
+            card.className = 'modal-card lose-theme';
+            document.getElementById('msg-title').innerHTML = "💔 能量耗盡！";
+            document.getElementById('msg-title').style.color = "var(--accent-red)";
+            document.getElementById('msg-body').innerText = `機甲受到損害，本次獲得分數：${score} 分`;
+            document.getElementById('msg-modal').classList.remove('hidden');
         }
 
         function showWinModal() {
